@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './app';
-
-import './styles/global.less'; // 确保创建这个文件
+import { Provider } from 'mobx-react';
+import taskStore from './stores/TaskStore';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
+  <Provider taskStore={taskStore}>
     <App />
-  </React.StrictMode>
+  </Provider>
 );

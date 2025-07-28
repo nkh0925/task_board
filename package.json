@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack serve --open --config ./config/webpack.dev.config.js",
@@ -22,7 +22,6 @@
     "clean-webpack-plugin": "^4.0.0",
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.2",
-    "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.6.3",
     "less": "^4.3.0",
     "less-loader": "^12.3.0",
@@ -34,7 +33,6 @@
     "sass-loader": "^16.0.5",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.14",
-    "url-loader": "^4.1.1",
     "webpack": "^5.100.1",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
@@ -43,9 +41,17 @@
   "dependencies": {
     "@babel/runtime": "^7.27.6",
     "antd-mobile": "^5.39.0",
+    "axios": "^1.11.0",
+    "lodash": "^4.17.21",
     "mobx": "^6.13.7",
     "mobx-react": "^9.2.0",
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0"
+    "mobx-react-lite": "^4.1.0",
+    "react": "^18.3.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-multi-backend": "^9.0.0",
+    "react-dnd-touch-backend": "^16.0.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
   }
 }
