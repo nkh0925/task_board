@@ -5,12 +5,8 @@ const TaskForm = ({ task, onClose,taskStore }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
- console.log('TaskForm received task prop:', task); 
-   console.log('TaskStore available:', !!taskStore); // 添加这行检查
-
 const handleSubmit = async (values) => {
-  console.log('handleSubmit called with values:', values);
-  setSubmitting(true);
+  setSubmitting(true); // 提交时设置为 true，禁用按钮
   
   // 确保转换为数字类型
   const processedValues = {
@@ -32,7 +28,7 @@ const handleSubmit = async (values) => {
   } catch (error) {
     console.error('Form submission error:', error);
   } finally {
-    setSubmitting(false);
+    setSubmitting(false); // 无论成功或失败，最后都设置为 false，启用按钮
   }
 };
 
