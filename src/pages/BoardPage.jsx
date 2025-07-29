@@ -1,12 +1,11 @@
 import React from'react';
-import { observer } from 'mobx-react-lite';
+import { observer } from 'mobx-react';
 import { useStores } from '../utils/hooks';
 import { SearchBar, Card, InfiniteScroll, Button, Modal } from 'antd-mobile';
 import TaskCard from '../components/TaskCard';
 import DragColumn from '../components/DragColumn';
 import TaskForm from '../components/TaskForm';
-import { DndProvider } from 'react-dnd';
-import { TouchBackend } from 'react-dnd-touch-backend';
+
 const statusMap = { 0: '待办', 1: '进行中', 2: '已完成' };
 
 const BoardPage = observer(() => {
@@ -31,7 +30,6 @@ const BoardPage = observer(() => {
   };
 
   return (
-    <DndProvider backend={TouchBackend}>
       <div>
         <SearchBar
           placeholder="搜索任务"
@@ -54,7 +52,6 @@ const BoardPage = observer(() => {
           </DragColumn>
         ))}
       </div>
-    </DndProvider>
   );
 });
 

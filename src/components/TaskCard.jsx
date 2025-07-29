@@ -12,7 +12,7 @@ const TaskCard = observer(({ task }) => {
   const { taskStore } = useStores();
 
   const [{ isDragging }, drag] = useDrag(() =>({
-    type: 'task', // 类型
+    type: 'task', 
     item: { task_id: task.task_id, status: task.status }, // 拖拽数据
     collect: monitor => ({ isDragging: !!monitor.isDragging() }),
   }));
@@ -38,11 +38,9 @@ const TaskCard = observer(({ task }) => {
   return (
 <div
       ref={drag}
-      // 将原 Card 上的 style 属性移动到 div 上，以保持拖拽时的透明度变化和间距
       style={{ opacity: isDragging ? 0.5 : 1, marginBottom: '10px' }}
     >
       <Card
-        // Card 自身的 style 可以移除，因为现在外层 div 已经处理了
         title={task.title}
         extra={<Button size="mini" onClick={handleDelete}>删除</Button>}
       >

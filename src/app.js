@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { observer } from 'mobx-react-lite';
+import { observer } from 'mobx-react';
 import { useStores } from './utils/hooks';
 import BoardPage from './pages/BoardPage';
 import { SpinLoading } from 'antd-mobile';

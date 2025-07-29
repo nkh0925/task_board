@@ -1,50 +1,73 @@
-import React from 'react';
-import { Card, Button, Modal } from 'antd-mobile'; // 引入 Toast
-import { observer } from 'mobx-react';
+import React, { useState } from 'react';
+import { Form, Input, Selector, Button } from 'antd-mobile';
 import { useStores } from '../utils/hooks';
-import { useDrag } from 'react-dnd';
-import TaskForm from './TaskForm';
+import { createTask, updateTask } from '../services/api';
 
-const priorityMap = { 1: '低', 2: '中',  3: '高' };
-
-const TaskCard = observer(({ task }) => {
+const TaskForm = ({ task, onClose }) => {
   const { taskStore } = useStores();
+  const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
 
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'task',
-    item: { task_id: task.task_id, status: task.status },
-    collect: monitor => ({ isDragging: !!monitor.isDragging() }),
-  }));
-
-  const handleDelete = () => {
-    Modal.confirm({
-      content: '确认删除？',
-      onConfirm: async () => {
-        await taskStore.deleteTask(task.task_id);
-      }
-    });
+  const handleSubmit = values => {
+    setSubmitting(true);
+    // 更新：从数组取单个值（Selector single 返回数组）
+    const processedValues = {
+      ...values,
+      priority: values.priority?.[0], // 取第一个（或 undefined）
+      status: values.status?.[0] // 取第一个（或 undefined）
+    };
+    const apiCall = task ? updateTask({ task_id: task.task_id, ...processedValues }) : createTask(processedValues);
+    apiCall
+      .then(res => {
+        if (task) {
+          taskStore.updateTask({ task_id: task.task_id, ...processedValues });
+        } else {
+          taskStore.addTask({ task_id: res.task_id, ...processedValues }); // 修正：从 createTask 改为 addTask（匹配 store）
+        }
+        onClose();
+      })
+      .catch(() => {})
+      .finally(() => setSubmitting(false));
   };
 
-  const showEditModal = () => {
-    Modal.show({
-      content: <TaskForm task={task} onClose={() => Modal.clear()} />,
-      closeOnMaskClick: true
-    });
-  };
+  // 更新：initialValues 用数组包装（修复 Selector 错误）
+  const initialValues = task
+    ? { ...task, priority: [task.priority], status: [task.status] }
+    : { priority: [2], status: [0] };
 
   return (
-    <Card
-      ref={drag}
-      title={task.title}
-      extra={<Button size="mini" onClick={handleDelete}>删除</Button>}
-      style={{ opacity: isDragging ? 0.5 : 1, marginBottom: '10px' }}
-    >
-      <p>{task.description}</p>
-      <p>优先级: {priorityMap[task.priority]}</p>
-      <p>创建时间: {new Date(task.create_time).toLocaleString()}</p>
-      <Button onClick={showEditModal}>编辑</Button>
-    </Card>
+    <Form form={form} onFinish={handleSubmit} initialValues={initialValues}>
+      <Form.Item name="title" label="标题" rules={[{ required: true, message: '标题不能为空' }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="description" label="描述">
+        <Input />
+      </Form.Item>
+      <Form.Item 
+        name="priority" 
+        label="优先级" 
+        valuePropName="value" // 新增：确保 Form 绑定 value 正确
+        rules={[{ required: true, message: '请选择优先级' }]} // 更新：加强规则
+      >
+        <Selector 
+          multiple={false} 
+          options={[{ label: '低', value: 1 }, { label: '中', value: 2 }, { label: '高', value: 3 }]} 
+        />
+      </Form.Item>
+      <Form.Item 
+        name="status" 
+        label="状态" 
+        valuePropName="value" // 新增：确保 Form 绑定 value 正确
+        rules={[{ required: true, message: '请选择状态' }]} // 更新：加强规则
+      >
+        <Selector 
+          multiple={false} 
+          options={[{ label: '待办', value: 0 }, { label: '进行中', value: 1 }, { label: '已完成', value: 2 }]} 
+        />
+      </Form.Item>
+      <Button type="submit" disabled={submitting}>提交</Button>
+    </Form>
   );
-});
+};
 
-export default TaskCard;
+export default TaskForm;

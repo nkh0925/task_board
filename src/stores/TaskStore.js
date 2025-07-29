@@ -1,6 +1,6 @@
 // TaskStore.js
 import { makeAutoObservable } from 'mobx';
-import { getTaskList, deleteTask as apiDeleteTask, updateTask as apiUpdateTask } from '../services/api';
+import { getTaskList, deleteTask, updateTask as apiUpdateTask } from '../services/api';
 import _ from 'lodash'; // for debounce
 import { Toast } from 'antd-mobile'; // 引入 Toast 用于提示用户
 
@@ -94,7 +94,7 @@ class TaskStore {
   // 核心删除任务的 action
   deleteTask = async (taskId) => {
     try {
-      await apiDeleteTask({ task_id: taskId });
+      await deleteTask({ task_id: taskId });
       this._removeTaskFromList(taskId); // 调用内部方法更新本地列表
       Toast.show({ content: '任务删除成功', icon: 'success' });
     } catch (error) {
