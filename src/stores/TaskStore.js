@@ -18,11 +18,9 @@ class TaskStore {
   hasMoreByStatus = { 0: true, 1: true, 2: true }; // 每列是否还有更多数据
 
   constructor() {
-    makeAutoObservable(this);
-    this._fetchTasks = this._fetchTasks.bind(this);
-    this.debouncedSearchFetch = _.debounce(this._fetchTasks, SEARCH_DEBOUNCE_DELAY);
-    this.debouncedInfiniteScrollFetch = _.debounce(this._fetchTasksByStatus, INFINITE_SCROLL_DEBOUNCE_DELAY);
-  }
+  makeAutoObservable(this);
+  this._fetchTasks = this._fetchTasks.bind(this);
+  this.debouncedSearchFetch = _.debounce(this._fetchTasks, 500);  }
 
   // 核心的获取任务列表函数
   _fetchTasks = async () => {
@@ -123,7 +121,8 @@ class TaskStore {
   };
 
   // 设置搜索关键词
-  setSearchKeyword = (keyword) => {
+setSearchKeyword = (keyword) => {
+  if (this.searchKeyword !== keyword) {
     this.searchKeyword = keyword;
     this.taskList = [];
     this.page = 1;
@@ -131,7 +130,8 @@ class TaskStore {
     this.pageByStatus = { 0: 1, 1: 1, 2: 1 };
     this.hasMoreByStatus = { 0: true, 1: true, 2: true };
     this.debouncedSearchFetch();
-  };
+  }
+};
 
   // 添加任务到本地列表
   _addTaskToList = (newTask) => {

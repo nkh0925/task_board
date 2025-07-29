@@ -10,6 +10,17 @@ const statusMap = { 0: '待办', 1: '进行中', 2: '已完成' };
 
 const BoardPage = observer(() => {
   const { taskStore } = useStores();
+  const [localKeyword, setLocalKeyword] = React.useState('');
+
+  const handleSearch = React.useCallback(_.debounce((keyword) => {
+    taskStore.setSearchKeyword(keyword);
+  }, 500), []);
+
+    // 输入变化处理
+  const handleInputChange = (value) => {
+    setLocalKeyword(value);
+    handleSearch(value);
+  };
 
   // 分组任务
   const groupedTasks = taskStore.taskList.reduce((acc, task) => {
@@ -30,8 +41,8 @@ const BoardPage = observer(() => {
     <div>
       <SearchBar
         placeholder="搜索任务"
-        value={taskStore.searchKeyword}
-        onChange={(value) => taskStore.setSearchKeyword(value)}
+        value={localKeyword}
+        onChange={handleInputChange}
         style={{ marginBottom: '10px' }}
       />
       <Button onClick={showAddModal} style={{ marginBottom: '10px' }}>新增任务</Button>
