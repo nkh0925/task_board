@@ -18,40 +18,62 @@ const BoardPage = observer(() => {
     return acc;
   }, {});
 
-  // 无限滚动加载更多
-  const loadMore = () => taskStore.loadMoreTasks();
-
   // 新增任务Modal
   const showAddModal = () => {
     Modal.show({
-      content: <TaskForm onClose={() => Modal.clear()} />,
-      closeOnMaskClick: true
+    content: <TaskForm taskStore={taskStore} onClose={() => Modal.clear()} />,      
+    closeOnMaskClick: true
     });
   };
 
   return (
-      <div>
-        <SearchBar
-          placeholder="搜索任务"
-          value={taskStore.searchKeyword} // 使 SearchBar 成为受控组件，显示 store 中的值
-          onChange={(value) => taskStore.setSearchKeyword(value)} // 传递输入值给 MobX action
-          style={{ marginBottom: '10px' }}
-        />
-        <Button onClick={showAddModal} style={{ marginBottom: '10px' }}>新增任务</Button>
+    <div>
+      <SearchBar
+        placeholder="搜索任务"
+        value={taskStore.searchKeyword}
+        onChange={(value) => taskStore.setSearchKeyword(value)}
+        style={{ marginBottom: '10px' }}
+      />
+      <Button onClick={showAddModal} style={{ marginBottom: '10px' }}>新增任务</Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', height: 'calc(100vh - 120px)' }}>
         {Object.keys(statusMap).map(status => (
-          <DragColumn key={status} status={parseInt(status)}>
-            <Card title={`${statusMap[status]} (${groupedTasks[status]?.length || 0})`}>
-              {/* InfiniteScroll 负责在需要时调用 loadMore */}
-              <InfiniteScroll loadMore={loadMore} hasMore={taskStore.hasMore}>
-                {/* 遍历并渲染属于当前状态的任务 */}
+          <div 
+            key={status}
+            style={{ 
+              width: '32%', 
+              height: '100%',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              backgroundColor: '#f5f5f5'
+            }}
+          >
+            <div style={{ padding: '12px 16px', fontWeight: 'bold', fontSize: '16px', borderBottom: '1px solid #e8e8e8' }}>
+              {statusMap[status]} ({groupedTasks[status]?.length || 0})
+            </div>
+            <div 
+              style={{ 
+                flex: 1, 
+                overflowY: 'auto',
+                padding: '8px',
+              }}
+            >
+              <DragColumn status={parseInt(status)}>
                 {groupedTasks[status]?.map(task => (
                   <TaskCard key={task.task_id} task={task} />
                 ))}
-              </InfiniteScroll>
-            </Card>
-          </DragColumn>
+                <InfiniteScroll 
+                  loadMore={() => taskStore.loadMoreTasksByStatus(parseInt(status))} 
+                  hasMore={taskStore.hasMoreByStatus[status] || false}
+                />
+              </DragColumn>
+            </div>
+          </div>
         ))}
       </div>
+    </div>
   );
 });
 

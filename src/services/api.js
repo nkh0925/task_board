@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Toast } from 'antd-mobile';
 
 // Axios实例
 const api = axios.create({
@@ -11,7 +12,7 @@ api.interceptors.response.use(
   response => response.data, 
   error => {
     const msg = error.response?.data?.message || 'Network error';
-    import('antd-mobile').then(({ Toast }) => Toast.show({ content: msg, duration: 2000 }));
+    Toast.show({ content: msg, duration: 2000 });
     return Promise.reject(error);
   }
 );
