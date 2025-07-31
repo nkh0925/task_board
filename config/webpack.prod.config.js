@@ -1,5 +1,5 @@
 const { merge } = require('webpack-merge');
-const common = require('./webpack.common.js');
+const common = require('./webpack.common.config.js');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -31,6 +31,7 @@ module.exports = merge(common, {
               modules: {
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 1, // <--- 添加这一行
             },
           },
           'postcss-loader',
@@ -59,6 +60,7 @@ module.exports = merge(common, {
               modules: {
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 2, // <--- 添加这一行
             },
           },
           'postcss-loader',
@@ -88,6 +90,7 @@ module.exports = merge(common, {
               modules: {
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 2, // <--- 添加这一行
             },
           },
           'postcss-loader',
@@ -124,3 +127,4 @@ module.exports = merge(common, {
     ],
   },
 });
+

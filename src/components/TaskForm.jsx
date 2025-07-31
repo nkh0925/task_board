@@ -19,7 +19,6 @@ const TaskForm = ({ task, onClose, taskStore }) => {
       description: values.description || '',
       priority: Number(Array.isArray(values.priority) ? values.priority[0] : values.priority),
       status: Number(Array.isArray(values.status) ? values.status[0] : values.status),
-      // 将 selectedDeadline（Date 对象）转换为 ISO 字符串格式，以便后端存储
       deadline: convertToIsoString(selectedDeadline)
     };
 
@@ -34,7 +33,6 @@ const TaskForm = ({ task, onClose, taskStore }) => {
       onClose(); // 提交成功后关闭 Modal
     } catch (error) {
       console.error('Form submission error:', error);
-      // 错误提示已在 api.js 和 TaskStore 中处理
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,3 @@
-// src/components/TaskCard.jsx
 import React, { useState, useRef } from 'react';
 import { Card, Modal, Popover, Button } from 'antd-mobile';
 import { MoreOutline, EditSOutline, DeleteOutline, InformationCircleOutline } from 'antd-mobile-icons';
@@ -7,6 +6,7 @@ import { useStores } from '../utils/hooks';
 import { useDrag, useDrop } from 'react-dnd';
 import TaskForm from './TaskForm';
 import { formatToLocaleString } from '../utils/dateUtils';
+import { CSSTransition } from 'react-transition-group'; // 需要安装这个依赖
 
 const priorityMap = { 1: '低', 2: '中',  3: '高' };
 const priorityBorderColors = {
@@ -17,65 +17,62 @@ const priorityBorderColors = {
 
 const TaskCard = observer(({ task }) => {
   const { taskStore } = useStores();
-  const [visible, setVisible] = useState(false); // 控制 Popover 的可见性
-  const ref = useRef(null); // 用于绑定 DND 的 DOM 引用
+  const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   // =========================== DND DRAG ===========================
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'task',
-    item: { task_id: task.task_id, status: task.status }, // 拖拽时传递任务 ID 和原始状态
+    item: { task_id: task.task_id, status: task.status },
     collect: monitor => ({ isDragging: monitor.isDragging() }),
-  }), [task.task_id, task.status]); // 依赖项，确保当 task 变化时 useDrag 更新
+  }), [task.task_id, task.status]);
 
   // =========================== DND DROP ===========================
-  const [, drop] = useDrop({
+  const [{ isOver }, drop] = useDrop({
     accept: 'task',
-    // hover 在被拖拽项在目标上方移动时持续触发
     hover(item, monitor) {
       if (!ref.current) {
         return;
       }
-      const draggedId = item.task_id; // 被拖拽的任务 ID
-      const hoveredId = task.task_id; // 当前悬停的任务 ID
+      const draggedId = item.task_id;
+      const hoveredId = task.task_id;
 
-      // 如果拖拽的是自身，则不处理
       if (draggedId === hoveredId) {
         return;
       }
 
-      // 确定悬停目标的矩形边界
       const hoverBoundingRect = ref.current?.getBoundingClientRect();
-      // 计算垂直中线
       const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-      // 获取鼠标在屏幕上的位置
       const clientOffset = monitor.getClientOffset();
-      // 获取鼠标相对于悬停目标顶部的垂直位置
-      const hoverClientY = (clientOffset).y - hoverBoundingRect.top;
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 
-      // 判断是插入到目标任务之前 (true) 还是之后 (false)
       const isBefore = hoverClientY < hoverMiddleY;
 
-      // 只有当拖拽项的当前状态（或其 `status` 在 `item` 中的值）与目标任务的状态不同，
-      // 或在同一列内移动时，才触发移动操作。
-      // 此处的 `moveTask` 实现了乐观更新，会在本地立即反映出排序变化。
       taskStore.moveTask(draggedId, hoveredId, task.status, isBefore);
-
-      // (可选) 优化：如果性能有问题，可以通过检查 item.status 是否已经等于 task.status
-      // 以及 item.order_index 与 task.order_index 的相对位置来减少不必要的 moveTask 调用。
-      // 但是 MobX 的 `runInAction` 和 `sortTaskList` 已经相对高效。
     },
-    // drop 在拖拽结束时触发，但如果 hover 已经处理了 API 调用，这里可以为空
-    drop(item, monitor) {
-      // 可以在这里进行一些清理或最终确认，但实际的 moveTask 已经在 hover 中触发
+drop(item) {
+  const draggedTask = taskStore.taskList.find(t => t.task_id === item.task_id);
+  if (draggedTask) {
+    // 检查状态是否发生了变化
+    if (item.status !== draggedTask.status) {
+      // 状态已变化，调用API保存新状态和位置
+      taskStore.saveTaskPosition(item.task_id, draggedTask.status, draggedTask.order_index);
+    } else {
+      taskStore.saveTaskPosition(item.task_id, draggedTask.status, draggedTask.order_index);
     }
+  }
+}
+,
+    collect: monitor => ({
+      isOver: monitor.isOver()
+    })
   });
 
-  // 将 drag 和 drop 的 ref 绑定到同一个 DOM 元素上
   drag(drop(ref));
 
-  // 处理删除任务的函数
   const handleDelete = () => {
-    setVisible(false); // 关闭 Popover
+    setVisible(false);
     Modal.confirm({
       content: '确认删除？',
       onConfirm: () => {
@@ -84,16 +81,14 @@ const TaskCard = observer(({ task }) => {
     });
   };
 
-  // 显示编辑任务 Modal 的函数
   const showEditModal = () => {
-    setVisible(false); // 关闭 Popover
+    setVisible(false);
     Modal.show({
       content: <TaskForm task={task} taskStore={taskStore} onClose={() => Modal.clear()} />,
       closeOnMaskClick: true
     });
   };
 
-  // 显示任务详情 Modal 的函数 (同上文已修改)
   const showDetailsModal = () => {
     setVisible(false);
     Modal.show({
@@ -112,7 +107,6 @@ const TaskCard = observer(({ task }) => {
     });
   };
 
-  // Popover 中的操作菜单项
   const actions = [
     {
       key: 'details',
@@ -135,14 +129,35 @@ const TaskCard = observer(({ task }) => {
     }
   ];
 
+  // 卡片样式，包含动画效果
+  const cardStyle = {
+    borderLeft: `5px solid ${priorityBorderColors[task.priority] || '#ccc'}`,
+    transition: 'all 0.3s ease',
+    transform: isDragging ? 'scale(1.02) rotate(1deg)' : 'scale(1) rotate(0)',
+    opacity: isDragging ? 0.6 : 1,
+    boxShadow: isDragging ? '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)' : 
+               isOver ? '0 3px 10px rgba(0,0,0,0.15)' : 
+               isHovered ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+    position: 'relative',
+    zIndex: isDragging ? 1000 : 1,
+    touchAction: 'none', // 防止触摸事件干扰拖拽
+  };
+
+  // 容器样式，控制卡片移动动画
+  const containerStyle = {
+    transition: 'transform 0.2s ease, opacity 0.2s ease',
+    marginBottom: '10px',
+    touchAction: 'none',
+  };
+
   return (
-    <div
-      ref={ref} // 绑定 ref
-      style={{
-        opacity: isDragging ? 0.5 : 1,
-        marginBottom: '10px',
-        cursor: 'grab', // 鼠标样式指示可拖拽
-      }}
+    <div 
+      ref={ref} 
+      style={containerStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => setIsHovered(false)}
     >
       <Card
         title={task.title}
@@ -176,14 +191,28 @@ const TaskCard = observer(({ task }) => {
             <MoreOutline style={{ fontSize: '20px' }} />
           </Popover>
         }
-        style={{
-          borderLeft: `5px solid ${priorityBorderColors[task.priority] || '#ccc'}`
-        }}
+        style={cardStyle}
       >
         <p>{task.description}</p>
-        <p style={{ fontSize: '12px', color: '#888' }}>
+        <p style={{ 
+          fontSize: '12px', 
+          color: task.deadline && task.status !== 2 && new Date() > new Date(task.deadline) ? '#f5222d' : '#888' 
+        }}>
           截止日期: {task.deadline ? formatToLocaleString(task.deadline) : '无'}
         </p>
+        
+        {isDragging && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(24, 144, 255, 0.1)',
+            borderRadius: '8px',
+            pointerEvents: 'none'
+          }} />
+        )}
       </Card>
     </div>
   );

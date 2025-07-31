@@ -1,6 +1,6 @@
 const path = require('path');
 const { merge } = require('webpack-merge');
-const common = require('./webpack.common.config.js');
+const common = require('./webpack.common.config.js'); 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = merge(common, {
@@ -11,6 +11,7 @@ module.exports = merge(common, {
     },
     port: 9000,
     compress: true,
+    historyApiFallback: true,
   },
   module: {
     rules: [
@@ -30,8 +31,10 @@ module.exports = merge(common, {
             loader: 'css-loader',
             options: {
               modules: {
+                auto: true,
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 1,
             },
           },
           'postcss-loader',
@@ -55,6 +58,7 @@ module.exports = merge(common, {
               modules: {
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 2, // <--- 因为有 postcss-loader 和 less-loader 两个
             },
           },
           'postcss-loader',
@@ -79,6 +83,7 @@ module.exports = merge(common, {
               modules: {
                 localIdentName: '[path][name]__[local]--[hash:base64:5]',
               },
+              importLoaders: 2, // <--- 因为有 postcss-loader 和 sass-loader 两个
             },
           },
           'postcss-loader',
@@ -96,3 +101,4 @@ module.exports = merge(common, {
   ],
   devtool: 'eval-cheap-module-source-map',
 });
+

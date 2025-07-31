@@ -1,4 +1,3 @@
-// src/components/DragColumn.jsx
 import React from 'react';
 import { useDrop } from 'react-dnd';
 import { useStores } from '../utils/hooks';
@@ -12,17 +11,13 @@ const DragColumn = ({ status, children }) => {
     drop: (item, monitor) => {
       const didDrop = monitor.didDrop();
       if (didDrop) {
-        return; // 如果被子组件（TaskCard）处理了，则不在这里重复处理
+        return; // 如果被TaskCard处理了，则不在这里重复处理
       }
 
-      // 如果 item.status !== status，说明是跨列拖拽，并且直接拖到列背景
-      // 或者 item.status === status，但在同一列内拖拽，且拖拽到空列或者列末尾
-      // 此时，将其视为移动到目标列的末尾
       if (item.task_id) {
         taskStore.moveTask(item.task_id, null, status, false); // targetId: null 表示移动到列尾
       }
     },
-    // 浅层收集：只在直接悬停在该组件上时触发 isOver
     collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
   });
 
