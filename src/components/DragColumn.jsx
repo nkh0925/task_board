@@ -1,3 +1,4 @@
+// src/components/DragColumn.jsx
 import React from 'react';
 import { useDrop } from 'react-dnd';
 import { useStores } from '../utils/hooks';
@@ -7,17 +8,39 @@ const DragColumn = ({ status, children }) => {
 
   const [{ isOver }, drop] = useDrop({
     accept: 'task',
-    drop: (item) => {
-      if (item.status === status) return; // 同列不更新
-      
-      // 调用taskStore的方法，它会处理乐观更新和API调用
-      taskStore.updateTaskStatus(item.task_id, status)
-        .catch(() => {}); // 错误处理已在store中完成
+    // drop 触发时，monitor.didDrop() 会告知是否被嵌套的 drop target 处理
+    drop: (item, monitor) => {
+      const didDrop = monitor.didDrop();
+      if (didDrop) {
+        return; // 如果被子组件（TaskCard）处理了，则不在这里重复处理
+      }
+
+      // 如果 item.status !== status，说明是跨列拖拽，并且直接拖到列背景
+      // 或者 item.status === status，但在同一列内拖拽，且拖拽到空列或者列末尾
+      // 此时，将其视为移动到目标列的末尾
+      if (item.task_id) {
+        taskStore.moveTask(item.task_id, null, status, false); // targetId: null 表示移动到列尾
+      }
     },
-    collect: monitor => ({ isOver: !!monitor.isOver() }),
+    // 浅层收集：只在直接悬停在该组件上时触发 isOver
+    collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
   });
 
-  return <div ref={drop} style={{ background: isOver ? 'lightblue' : 'white', minHeight: '200px' }}>{children}</div>;
+  return (
+    <div
+      ref={drop} // 绑定 drop target
+      style={{
+        background: isOver ? 'rgba(0, 191, 255, 0.1)' : '#f5f5f5', // 悬停时背景变化
+        minHeight: '200px', // 确保空列也有拖拽区域
+        flex: 1,
+        padding: '8px',
+        borderRadius: '8px',
+        border: isOver ? '2px dashed lightblue' : 'none' // 添加边框反馈
+      }}
+    >
+      {children}
+    </div>
+  );
 };
 
 export default DragColumn;
