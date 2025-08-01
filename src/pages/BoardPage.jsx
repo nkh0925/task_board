@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { observer } from 'mobx-react';
 import { useStores } from '../utils/hooks';
-import { SearchBar, InfiniteScroll, Modal } from 'antd-mobile';
-import { AddOutline } from 'antd-mobile-icons';
+import { SearchBar, InfiniteScroll, Modal, Popover, Button } from 'antd-mobile';
+import { AddOutline, FilterOutline } from 'antd-mobile-icons';
 import TaskCard from '../components/TaskCard';
 import DragColumn from '../components/DragColumn';
 import TaskForm from '../components/TaskForm';
+import _ from 'lodash';
 
 const statusMap = { 0: '待办', 1: '进行中', 2: '已完成' };
 
 const BoardPage = observer(() => {
   const { taskStore } = useStores();
   const [localKeyword, setLocalKeyword] = React.useState('');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [currentSort, setCurrentSort] = useState('priority');
 
   const handleSearch = React.useCallback(_.debounce((keyword) => {
     taskStore.setSearchKeyword(keyword);
@@ -21,6 +24,18 @@ const BoardPage = observer(() => {
     setLocalKeyword(value);
     handleSearch(value);
   };
+
+  const handleSortChange = (sortType) => {
+    setCurrentSort(sortType);
+    taskStore.setSortType(sortType);
+    setFilterVisible(false);
+  };
+
+  const sortOptions = [
+    { key: 'priority', label: '按优先级排序' },
+    { key: 'createTime', label: '按创建时间排序' },
+    { key: 'deadline', label: '按截止时间排序' }
+  ];
 
   const groupedTasks = taskStore.taskList.reduce((acc, task) => {
     acc[task.status] = acc[task.status] || [];
@@ -41,13 +56,52 @@ const BoardPage = observer(() => {
 
   return (
     <div style={{ padding: '12px' }}>
-      {/* 搜索栏 */}
-      <SearchBar
-        placeholder="搜索任务"
-        value={localKeyword}
-        onChange={handleInputChange}
-        style={{ marginBottom: '16px' }}
-      />
+      {/* 搜索栏和筛选按钮 */}
+      <div style={{ display: 'flex', marginBottom: '16px', gap: '8px' }}>
+        <SearchBar
+          placeholder="搜索任务"
+          value={localKeyword}
+          onChange={handleInputChange}
+          style={{ flex: 1 }}
+        />
+        
+        <Popover
+          visible={filterVisible}
+          onVisibleChange={setFilterVisible}
+          content={
+            <div style={{ padding: '8px 0' }}>
+              {sortOptions.map(option => (
+                <div
+                  key={option.key}
+                  onClick={() => handleSortChange(option.key)}
+                  style={{
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: currentSort === option.key ? '#f0f0f0' : 'transparent'
+                  }}
+                >
+                  <span>{option.label}</span>
+                </div>
+              ))}
+            </div>
+          }
+          trigger='click'
+          placement='bottomRight'
+        >
+          <Button
+            style={{ 
+              padding: '0 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <FilterOutline fontSize={20} />
+          </Button>
+        </Popover>
+      </div>
 
       {/* 看板列容器 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', height: 'calc(100vh - 80px)', gap: '12px' }}>

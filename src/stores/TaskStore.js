@@ -21,24 +21,52 @@ constructor() {
   this.debouncedSearchFetch = _.debounce(this._fetchTasks, SEARCH_DEBOUNCE_DELAY);
   this.moveTask = this.moveTask.bind(this);
   this.saveTaskPosition = this.saveTaskPosition.bind(this);
+  this.sortType = 'priority'; // 默认排序类型
 }
-sortTaskList = () => {
-  this.taskList.sort((a, b) => {
-    if (a.status !== b.status) {
-      return a.status - b.status; // 首先按状态升序
-    }
-    
-    // 在同一状态下，按优先级降序（高优先级在前）
-    if (a.priority !== b.priority) {
-      return b.priority - a.priority; // 3(高) > 2(中) > 1(低)
-    }
-    
-    // 在同一状态和优先级下，按 order_index 升序
-    const orderA = a.order_index === null || a.order_index === undefined ? Infinity : a.order_index;
-    const orderB = b.order_index === null || b.order_index === undefined ? Infinity : b.order_index;
-    return orderA - orderB;
-  });
-};
+
+  sortTaskList = (sortType = 'priority') => {
+    this.taskList.sort((a, b) => {
+      // 首先按状态分组
+      if (a.status !== b.status) {
+        return a.status - b.status;
+      }
+      
+      // 然后根据选择的排序类型排序
+      switch (sortType) {
+        case 'priority':
+          // 优先级降序（高优先级在前）
+          if (a.priority !== b.priority) {
+            return b.priority - a.priority;
+          }
+          // 相同优先级按 order_index
+          return (a.order_index ?? Infinity) - (b.order_index ?? Infinity);
+          
+        case 'createTime':
+          // 创建时间降序（新创建的在前）
+          return new Date(b.create_time) - new Date(a.create_time);
+          
+        case 'deadline':
+          // 截止时间升序（即将到期的在前）
+          // 无截止日期的任务放在最后
+          if (!a.deadline && !b.deadline) return 0;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return new Date(a.deadline) - new Date(b.deadline);
+          
+        default:
+          // 默认按 order_index
+          return (a.order_index ?? Infinity) - (b.order_index ?? Infinity);
+      }
+    });
+  };
+
+  // 添加新方法来设置排序类型
+  setSortType = (sortType) => {
+    runInAction(() => {
+      this.sortType = sortType;
+      this.sortTaskList(sortType);
+    });
+  };
 
   // 核心的获取任务列表函数
   _fetchTasks = async () => {
@@ -47,7 +75,10 @@ sortTaskList = () => {
       return;
     }
     // 使用 runInAction 确保 MobX 状态在异步操作中同步更新
-    runInAction(() => { this.isLoading = true; });
+    runInAction(() => { 
+      this.taskList = res.tasks;
+      this.sortTaskList(this.sortType);
+      this.isLoading = true; });
 
     const payload = { page: this.page };
     if (this.searchKeyword !== '') { payload.search = this.searchKeyword; }
@@ -75,7 +106,9 @@ sortTaskList = () => {
   _fetchTasksByStatus = async (status) => {
     if (this.loadingByStatus[status]) { return; }
 
-    runInAction(() => { this.loadingByStatus[status] = true; });
+    runInAction(() => { 
+      this.sortTaskList(this.sortType);
+      this.loadingByStatus[status] = true; });
 
     const payload = { page: this.pageByStatus[status], status: status };
     if (this.searchKeyword !== '') { payload.search = this.searchKeyword; }
@@ -146,8 +179,6 @@ sortTaskList = () => {
 
     const oldStatus = draggedTask.status;
 
-    // 仅执行本地乐观更新
-    let newIndexForAPI = 0;
     runInAction(() => {
       // 从当前列表中移除被拖拽的任务
       this.taskList = this.taskList.filter(t => t.task_id !== draggedId);
@@ -182,8 +213,7 @@ sortTaskList = () => {
         ...(oldStatus !== newStatus ? this.taskList.filter(t => t.status === oldStatus) : []),
         ...targetColumnTasks
       ];
-      this.sortTaskList();
-    });
+      this.sortTaskList(this.sortType);    });
   };
 
   saveTaskPosition = async (taskId, newStatus, newIndex) => {
@@ -211,9 +241,8 @@ sortTaskList = () => {
       const tasksInNewColumn = this.taskList.filter(t => t.status === newTask.status);
       const maxOrder = tasksInNewColumn.reduce((max, t) => Math.max(max, t.order_index || 0), -1); // 初始值-1确保第一个是0
       newTask.order_index = maxOrder + 1;
-
+      this.sortTaskList(this.sortType);
       this.taskList.push(newTask);
-      this.sortTaskList();
     });
   };
 
@@ -223,7 +252,7 @@ sortTaskList = () => {
       this.taskList = this.taskList.map(task =>
         task.task_id === updatedTask.task_id ? { ...task, ...updatedTask } : task
       );
-      this.sortTaskList();
+      this.sortTaskList(this.sortType);
     });
   };
 
@@ -231,7 +260,7 @@ sortTaskList = () => {
   _removeTaskFromList = (taskId) => {
     runInAction(() => {
       this.taskList = this.taskList.filter(task => task.task_id !== taskId);
-      this.sortTaskList();
+      this.sortTaskList(this.sortType);    
     });
   };
 
