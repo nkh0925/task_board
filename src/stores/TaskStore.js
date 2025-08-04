@@ -69,38 +69,41 @@ constructor() {
   };
 
   // 核心的获取任务列表函数
-  _fetchTasks = async () => {
-    if (this.isLoading) {
-      console.log('Already loading, aborting new fetch call.');
-      return;
-    }
-    // 使用 runInAction 确保 MobX 状态在异步操作中同步更新
-    runInAction(() => { 
+_fetchTasks = async () => {
+  if (this.isLoading) {
+    console.log('Already loading, aborting new fetch call.');
+    return;
+  }
+  
+  // 先设置loading状态
+  runInAction(() => { 
+    this.isLoading = true; 
+  });
+
+  const payload = { page: this.page };
+  if (this.searchKeyword !== '') { payload.search = this.searchKeyword; }
+
+  try {
+    // 先获取数据
+    const res = await getTaskList(payload);
+    
+    // 然后再使用res
+    runInAction(() => {
       this.taskList = res.tasks;
       this.sortTaskList(this.sortType);
-      this.isLoading = true; });
+      this.hasMore = this.taskList.length < res.total;
+      this.page++;
+      this.pageByStatus = { 0: 1, 1: 1, 2: 1 };
+      this.hasMoreByStatus = { 0: true, 1: true, 2: true };
+    });
+  } catch (err) {
+    console.error('getTaskList error:', err.response?.data || err.message || err);
+    runInAction(() => { this.hasMore = false; });
+  } finally {
+    runInAction(() => { this.isLoading = false; });
+  }
+};
 
-    const payload = { page: this.page };
-    if (this.searchKeyword !== '') { payload.search = this.searchKeyword; }
-
-    try {
-      const res = await getTaskList(payload);
-      runInAction(() => {
-        this.taskList = res.tasks; // 替换整个列表
-        this.sortTaskList(); // 确保列表按照 order_index 排序
-        this.hasMore = this.taskList.length < res.total;
-        this.page++;
-        // 重置每列的分页状态
-        this.pageByStatus = { 0: 1, 1: 1, 2: 1 };
-        this.hasMoreByStatus = { 0: true, 1: true, 2: true };
-      });
-    } catch (err) {
-      console.error('getTaskList error:', err.response?.data || err.message || err);
-      runInAction(() => { this.hasMore = false; });
-    } finally {
-      runInAction(() => { this.isLoading = false; });
-    }
-  };
 
   // 按状态加载任务（无限滚动）
   _fetchTasksByStatus = async (status) => {

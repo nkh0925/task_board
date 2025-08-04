@@ -48,10 +48,10 @@ const App = observer(() => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)', // 半透明背景
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 zIndex: 9999 
             }}>
-                <SpinLoading style={{ fontSize: 40 }} /> {/* 调整大小方便看 */}
+                <SpinLoading style={{ fontSize: 40 }} />
             </div>
         )}
         <LazyBoardPage />
