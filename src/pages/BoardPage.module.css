@@ -1,44 +1,42 @@
+/* src/pages/BoardPage.module.css */
 .container {
+  /* 由于App.js已经处理了margin-left来推开内容，这里只需要顶部padding */
   padding: 12px;
-}
-
-.searchFilterContainer {
+  padding-top: 50px; /* 为左上角的Sidebar打开按钮留出空间 */
+  /* 为了适配整个应用横向放置的需求，这里boardPage的container高度需要填充满 */
+  height: 100vh;
+  box-sizing: border-box; /* 确保padding不会导致高度溢出 */
   display: flex;
-  margin-bottom: 16px;
-  gap: 8px;
+  flex-direction: column; /* 内容还是垂直排列 */
 }
 
-.filterOptions {
-  padding: 8px 0;
-}
-
-.filterOption {
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.filterOptionActive {
-  background-color: #f0f0f0;
-}
-
-.filterButton {
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* 移除 .searchFilterContainer 及其子元素样式，它们不再存在于 BoardPage */
+/* .searchFilterContainer { ... } */
+/* .filterOptions { ... } */
+/* .filterOption { ... } */
+/* .filterOptionActive { ... } */
+/* .filterButton { ... } */
 
 .columnsContainer {
   display: flex;
   justify-content: space-between;
-  height: calc(100vh - 80px);
+  /* 现在 BoardPage 的高度是 100vh，需要从总高度中减去 padding */
+  height: calc(100vh - 12px - 12px); /* 减去上下的padding */
+  /* 如果顶部预留 50px 是在 App.js 的 div 上，这里只需要减去 BoardPage 自身的 padding */
+  /* 让我们假设 BoardPage 负责自身布局，扣除顶部留白的 50px */
+  /* 那么实际内容区高度为 100vh - 50px (顶部按钮预留) - 24px (上下padding) */
+  /* 所以 height: calc(100vh - 74px); */
+  /* 不过，更稳健的方式是让 BoardPage 内部的 columnsContainer 填满剩余空间 */
+  flex-grow: 1; /* 让列容器占据BoardPage剩余垂直空间 */
   gap: 12px;
+  overflow-x: auto; /* 当列过多时允许横向滚动 */
+  padding-bottom: 12px; /* 底部padding，防止滚动条遮挡内容 */
 }
 
 .column {
-  flex: 1;
+  flex: 1; /* 默认等分空间 */
+  min-width: 280px; /* 设置列的最小宽度，防止内容过窄 */
+  max-width: 350px; /* 设置列的最大宽度，防止过宽影响整体布局 */
   height: 100%;
   overflow: hidden;
   display: flex;
@@ -59,17 +57,6 @@
   background-color: #fff;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
-}
-
-.addButton {
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.addButton:hover {
-  background-color: #f0f0f0;
 }
 
 .tasksContainer {
